@@ -9,6 +9,7 @@ class DownloadFileService {
     await FlutterDownloader.initialize(); // Initialize the downloader
   }
 
+// start downloading event
   Future<void> startDownload(
       String url, String filename, DownloadProvider provider) async {
     var isPermissionStorage = await PermissionStorage.getPermissionStorage();
@@ -22,8 +23,7 @@ class DownloadFileService {
             savedDir: savedDir.path,
             showNotification: true,
             openFileFromNotification: false);
-
-        provider.addTask(Task(
+        provider.addTask(SimpleTask(
           fileName: filename,
           taskId: taskId,
           status: DownloadTaskStatus.running,

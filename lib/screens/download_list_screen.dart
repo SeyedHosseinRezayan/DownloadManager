@@ -1,12 +1,6 @@
 import 'dart:io';
-import 'dart:isolate';
-import 'dart:ui';
-
 import 'package:downlaod_service/constants/Constants.dart';
-import 'package:downlaod_service/main.dart';
-import 'package:downlaod_service/model/task.dart';
 import 'package:downlaod_service/providers/download_provider.dart';
-import 'package:downlaod_service/screens/home_screen.dart';
 import 'package:downlaod_service/service/download_file_service.dart';
 import 'package:downlaod_service/utility/utility.dart';
 import 'package:flutter/material.dart';
@@ -22,43 +16,9 @@ class DownloadListScreen extends StatefulWidget {
 }
 
 class _DownloadListScreenState extends State<DownloadListScreen> {
-  final ReceivePort _receivePort = ReceivePort();
+  TextEditingController controller = TextEditingController();
+  FocusNode _focus = FocusNode();
   DownloadFileService downloadService = DownloadFileService();
-
-  @pragma('vm:entry-point')
-  static void downloadCallback(String id, int status, int progress) {
-    final SendPort? send =
-        IsolateNameServer.lookupPortByName('downloader_send_port');
-    send!.send([id, status, progress]);
-  }
-
-// bind backgrond isolate
-  bindBackgroundIsolate() {
-    IsolateNameServer.registerPortWithName(
-        _receivePort.sendPort, 'downloader_send_port');
-    _receivePort.listen((message) {
-      String taskId = message[0];
-      int status = message[1];
-      int progress = message[2];
-
-      var tasks = context
-          .read<DownloadProvider>()
-          .tasks
-          .where((task) => task.taskId == taskId);
-      tasks.forEach((element) {
-        element.status = DownloadTaskStatus.fromInt(status);
-        element.progress = progress;
-      });
-
-      print('#### Status : { ${status} }');
-      print('#### Progress : { ${progress} }');
-    });
-  }
-
-// un bind backgrond isolate remove port
-  unBindBackgroundIsolate() {
-    IsolateNameServer.removePortNameMapping('downloader_send_port');
-  }
 
   @override
   void initState() {
@@ -67,16 +27,6 @@ class _DownloadListScreenState extends State<DownloadListScreen> {
     context
         .read<DownloadProvider>()
         .loadTasks(context.read<DownloadProvider>());
-
-    // bing background isolate
-    bindBackgroundIsolate();
-    FlutterDownloader.registerCallback(downloadCallback);
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    unBindBackgroundIsolate();
   }
 
   @override
@@ -105,9 +55,68 @@ class _DownloadListScreenState extends State<DownloadListScreen> {
         child: Center(
           child: Column(
             children: [
-              Expanded(
-                flex: 1,
-                child: filesListView(provider),
+              SizedBox(height: 10),
+              Padding(
+                padding: EdgeInsets.only(left: 5, right: 5),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        maxLength: 200,
+                        controller: controller,
+                        focusNode: _focus,
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsetsDirectional.symmetric(
+                              horizontal: 15, vertical: 20),
+                          labelText: 'Url',
+                          hintText: 'https://  Pase your Url here',
+                          labelStyle: TextStyle(
+                              fontFamily: "SM",
+                              fontSize: 20,
+                              color: _focus.hasFocus
+                                  ? Color.fromARGB(255, 214, 4, 4)
+                                  : Color.fromARGB(255, 99, 37, 22)),
+                          enabledBorder: const OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(15)),
+                              borderSide: BorderSide(
+                                  color: Color.fromARGB(255, 99, 37, 22),
+                                  width: 2.0)),
+                          focusedBorder: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(15)),
+                            borderSide: BorderSide(
+                              width: 3,
+                              color: Color.fromARGB(255, 99, 37, 22),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(
+                          left: 5, right: 5, bottom: 15, top: 5),
+                      child: InkWell(
+                        onTap: () {
+                          provider.addUrl(controller.text);
+                        },
+                        child: const Icon(
+                          Icons.add_box,
+                          size: 40,
+                          color: Color.fromARGB(255, 99, 37, 22),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Consumer<DownloadProvider>(
+                builder: (context, newProvider, child) {
+                  return Expanded(
+                    flex: 1,
+                    child: filesListView(provider),
+                  );
+                },
               ),
               Consumer<DownloadProvider>(
                 builder: (context, newProvider, child) {
@@ -132,20 +141,26 @@ class _DownloadListScreenState extends State<DownloadListScreen> {
       itemCount: provider.urls.length,
       itemBuilder: (context, index) {
         String fileName = Path.basename(provider.urls[index]);
-        return Card(
-          color: ColorConstants.red,
-          elevation: 6,
-          child: ListTile(
-            title: Text(
-              fileName,
-              style: TextStyle(color: ColorConstants.white),
-            ),
-            trailing: GestureDetector(
-              onTap: () {
-                downloadService.startDownload(
-                    provider.urls[index], fileName, provider);
-              },
-              child: Icon(Icons.download, color: ColorConstants.white),
+        return Dismissible(
+          key: UniqueKey(),
+          onDismissed: (direction) {
+            provider.deleteUrl(provider.urls[index]);
+          },
+          child: Card(
+            color: ColorConstants.red,
+            elevation: 6,
+            child: ListTile(
+              title: Text(
+                fileName,
+                style: const TextStyle(color: ColorConstants.white),
+              ),
+              trailing: GestureDetector(
+                onTap: () {
+                  downloadService.startDownload(
+                      provider.urls[index], fileName, provider);
+                },
+                child: const Icon(Icons.download, color: ColorConstants.white),
+              ),
             ),
           ),
         );
@@ -160,7 +175,9 @@ class _DownloadListScreenState extends State<DownloadListScreen> {
       itemBuilder: (context, index) {
         // task
         var task = newProvider.tasks[index];
-
+        // filename
+        var filename = newProvider.tasks[index].fileName ?? 'file ${index + 1}';
+        // saved Dir file
         FileSystemEntity? file = getFileFromDirectory(savedDir: task.savedDir!);
 
         return GestureDetector(
@@ -170,8 +187,7 @@ class _DownloadListScreenState extends State<DownloadListScreen> {
             child: Column(
               children: [
                 ListTile(
-                  title: Text(
-                      '${newProvider.tasks[index].fileName ?? 'file ${index + 1}'}'),
+                  title: Text(filename),
                   trailing: buttons(task.taskId, task.status!, index),
                   subtitle: textDownloadStatus(task.status!),
                 ),
@@ -186,8 +202,7 @@ class _DownloadListScreenState extends State<DownloadListScreen> {
   }
 
   ////         Widgets        ////
-
-  ///   progress
+  ///  1    progress
   Widget getProgressIndicator(int progress) {
     return Padding(
       padding: const EdgeInsets.all(5),
@@ -202,9 +217,9 @@ class _DownloadListScreenState extends State<DownloadListScreen> {
     );
   }
 
-  ///  Text Download Status
+  ///  2   Text Download Status
   Widget textDownloadStatus(DownloadTaskStatus status) {
-    String message = '';
+    String message = 'Waiting ...';
     Color color;
     switch (status) {
       case DownloadTaskStatus.running:
@@ -234,16 +249,16 @@ class _DownloadListScreenState extends State<DownloadListScreen> {
     );
   }
 
-  ///  Buttons  Download Status
+  /// 3  Buttons  Download Status
   Widget buttons(var taskId, DownloadTaskStatus status, int index) {
     void changedTaskId(String oldTaskId, String newTaskId) {
       setState(() {
-        var _tasks = context.read<DownloadProvider>().tasks.where(
+        var tasks = context.read<DownloadProvider>().tasks.where(
               (task) => task.taskId == oldTaskId,
             );
-        _tasks.forEach((element) {
+        for (var element in tasks) {
           element.taskId = newTaskId;
-        });
+        }
       });
     }
 
@@ -252,7 +267,7 @@ class _DownloadListScreenState extends State<DownloadListScreen> {
       return GestureDetector(
         child: const Icon(
           Icons.cancel,
-          color: const Color.fromARGB(255, 180, 0, 30),
+          color: Color.fromARGB(255, 180, 0, 30),
         ),
         onTap: () {
           setState(() {
