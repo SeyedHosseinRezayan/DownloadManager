@@ -9,9 +9,10 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 class DownloadProvider with ChangeNotifier {
   //add urls
   List<String> _urls = [
-    'https://dl4.3rver.org/Trailer/2024/07/Deadpool.2016.Trailer.mp4',
+    'https://dl4.3rver.org/Trailer/2024/07/The.Tiny.Chef.Show.Trailer.mp4',
     'https://sample-videos.com/audio/mp3/crowd-cheering.mp3',
     'https://sample-videos.com/img/Sample-png-image-30mb.png',
+    'https://video-5.dalfak.com/69/695460818-490315328.mp4?dl=true.mp4'
   ];
 
   void addUrl(String url) {
