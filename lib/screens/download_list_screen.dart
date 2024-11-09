@@ -55,61 +55,8 @@ class _DownloadListScreenState extends State<DownloadListScreen> {
         child: Center(
           child: Column(
             children: [
-              SizedBox(height: 10),
-              Padding(
-                padding: EdgeInsets.only(left: 5, right: 5),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        maxLength: 200,
-                        controller: controller,
-                        focusNode: _focus,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsetsDirectional.symmetric(
-                              horizontal: 15, vertical: 20),
-                          labelText: 'Url',
-                          hintText: 'https://  Pase your Url here',
-                          labelStyle: TextStyle(
-                              fontFamily: "SM",
-                              fontSize: 20,
-                              color: _focus.hasFocus
-                                  ? Color.fromARGB(255, 214, 4, 4)
-                                  : Color.fromARGB(255, 99, 37, 22)),
-                          enabledBorder: const OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(15)),
-                              borderSide: BorderSide(
-                                  color: Color.fromARGB(255, 99, 37, 22),
-                                  width: 2.0)),
-                          focusedBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(15)),
-                            borderSide: BorderSide(
-                              width: 3,
-                              color: Color.fromARGB(255, 99, 37, 22),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(
-                          left: 5, right: 5, bottom: 15, top: 5),
-                      child: InkWell(
-                        onTap: () {
-                          provider.addUrl(controller.text);
-                        },
-                        child: const Icon(
-                          Icons.add_box,
-                          size: 40,
-                          color: Color.fromARGB(255, 99, 37, 22),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 10),
+              getTextField(provider),
               Consumer<DownloadProvider>(
                 builder: (context, newProvider, child) {
                   return Expanded(
@@ -131,6 +78,62 @@ class _DownloadListScreenState extends State<DownloadListScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+// text field for urls
+  Padding getTextField(DownloadProvider provider) {
+    return Padding(
+      padding: EdgeInsets.only(left: 5, right: 5),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Expanded(
+            child: TextField(
+              maxLength: 200,
+              controller: controller,
+              focusNode: _focus,
+              decoration: InputDecoration(
+                contentPadding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: 15, vertical: 20),
+                labelText: 'Url',
+                hintText: 'https://  Pase your Url here',
+                labelStyle: TextStyle(
+                    fontFamily: "SM",
+                    fontSize: 20,
+                    color: _focus.hasFocus
+                        ? Color.fromARGB(255, 214, 4, 4)
+                        : Color.fromARGB(255, 99, 37, 22)),
+                enabledBorder: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(15)),
+                    borderSide: BorderSide(
+                        color: Color.fromARGB(255, 99, 37, 22), width: 2.0)),
+                focusedBorder: const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(15)),
+                  borderSide: BorderSide(
+                    width: 3,
+                    color: Color.fromARGB(255, 99, 37, 22),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding:
+                const EdgeInsets.only(left: 5, right: 5, bottom: 15, top: 5),
+            child: InkWell(
+              onTap: () {
+                provider.addUrl(controller.text);
+              },
+              child: const Icon(
+                Icons.add_box,
+                size: 40,
+                color: Color.fromARGB(255, 99, 37, 22),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
